@@ -2,7 +2,7 @@ const path = require('node:path');
 const dotenv = require('dotenv');
 const { z } = require('zod');
 
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),

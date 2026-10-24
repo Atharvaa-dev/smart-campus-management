@@ -125,7 +125,7 @@ const fakePool = {
     if (sql.includes('SELECT COUNT(*) AS count FROM subjects')) return [[{ count: 4 }]];
     if (sql.includes('FROM campus_events') && sql.includes('LIMIT 5')) return [[{ id: 1, title: 'TechNova', eventType: 'Technology', startsAt: '2026-10-29T10:00:00', location: 'Auditorium' }]];
     if (sql.includes('FROM students s') && sql.includes('GROUP BY s.id')) {
-      return [[{ id: profile.id, studentNumber: profile.studentNumber, name: profile.name, course: profile.course, semester: profile.semester, phone: profile.phone, email: profile.email, totalClasses: 10, attendedClasses: 9 }]];
+      return [[{ id: profile.id, studentNumber: profile.studentNumber, name: profile.name, course: profile.course, semester: profile.semester, phone: profile.phone, email: profile.email, totalClasses: 10, attendedClasses: 9, attendancePercent: 90 }]];
     }
     if (sql.includes('FROM subjects WHERE is_active = TRUE')) {
       const [, course, semester] = params;
@@ -181,7 +181,7 @@ const fakePool = {
 
     if (sql.includes('FROM campus_events e')) {
       const studentId = params[0];
-      return [[{ id: 1, title: 'TechNova', description: 'Campus demos', eventType: 'Technology', startsAt: '2026-10-29T10:00:00', location: 'Auditorium', registered: eventRegistrations.has(`${studentId}:1`) ? 1 : 0 }]];
+      return [[{ id: 1, title: 'TechNova', description: 'Campus demos', eventType: 'Technology', startsAt: '2026-10-29T10:00:00', location: 'Auditorium', registered: eventRegistrations.has(`${studentId}:1`) }]];
     }
     if (sql.startsWith('SELECT id FROM campus_events')) return [[{ id: 1 }]];
 
@@ -247,7 +247,7 @@ const fakePool = {
   },
 };
 
-const databaseModule = require.resolve('../src/db');
+const databaseModule = require.resolve('./db');
 require.cache[databaseModule] = {
   id: databaseModule,
   filename: databaseModule,
@@ -257,7 +257,7 @@ require.cache[databaseModule] = {
   paths: [],
 };
 
-const app = require('../src/app');
+const app = require('./app');
 let server;
 let baseUrl;
 let studentCookie;

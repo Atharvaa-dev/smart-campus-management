@@ -2,7 +2,7 @@ const readline = require('node:readline/promises');
 const { stdin, stdout } = require('node:process');
 const bcrypt = require('bcryptjs');
 const { z } = require('zod');
-const { validate } = require('../errors');
+const { validate } = require('./errors');
 const { persistAccount } = require('./account-persistence');
 
 function option(name) {
@@ -88,8 +88,8 @@ function safeErrorMessage(error) {
 }
 
 async function main() {
-  const pool = require('../db');
-  const config = require('../config');
+  const pool = require('./db');
+  const config = require('./config');
   const prompt = readline.createInterface({ input: stdin, output: stdout });
   const role = option('role') || 'student';
 

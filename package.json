@@ -3,13 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "description": "Smart Campus student portal with an Express and MySQL API",
-  "main": "server/src/server.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node server/src/server.js",
-    "dev": "node --watch server/src/server.js",
+    "start": "node server.js",
+    "dev": "node --watch server.js",
     "test": "node --test",
-    "admin:create": "node server/src/cli/create-account.js --role admin",
-    "student:create": "node server/src/cli/create-account.js --role student"
+    "admin:create": "node create-account.js --role admin",
+    "student:create": "node create-account.js --role student"
   },
   "engines": {
     "node": ">=20"
