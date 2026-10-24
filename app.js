@@ -100,7 +100,6 @@ app.use('/api/events', require('./events'));
 app.use('/api/announcements', require('./announcements'));
 app.use('/api/admin', require('./admin'));
 
-
 const pageFiles = [
   '/index.html', '/login.html', '/attendance.html', '/assignments.html',
   '/timetable.html', '/events.html', '/announcements.html', '/profile.html', '/settings.html',
