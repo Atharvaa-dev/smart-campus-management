@@ -81,6 +81,7 @@ app.get('/api/health', async (_req, res, next) => {
   }
 });
 
+
 app.use('/api/auth', rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
@@ -88,16 +89,16 @@ app.use('/api/auth', rateLimit({
   legacyHeaders: false,
   message: { error: 'Too many sign-in attempts. Try again in a few minutes.' },
   skipSuccessfulRequests: true,
-}), require('./routes/auth'));
+}), require('./auth'));
 
 // Each router owns a feature area; the router applies its own authentication and role rules.
-app.use('/api/profile', require('./routes/profile'));
-app.use('/api/attendance', require('./routes/attendance'));
-app.use('/api/assignments', require('./routes/assignments'));
-app.use('/api/timetable', require('./routes/timetable'));
-app.use('/api/events', require('./routes/events'));
-app.use('/api/announcements', require('./routes/announcements'));
-app.use('/api/admin', require('./routes/admin'));
+app.use('/api/profile', require('./profile'));
+app.use('/api/attendance', require('./attendance'));
+app.use('/api/assignments', require('./assignments'));
+app.use('/api/timetable', require('./timetable'));
+app.use('/api/events', require('./events'));
+app.use('/api/announcements', require('./announcements'));
+app.use('/api/admin', require('./admin'));
 
 const pageFiles = [
   '/index.html', '/login.html', '/attendance.html', '/assignments.html',
