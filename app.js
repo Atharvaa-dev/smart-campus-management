@@ -24,7 +24,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", 'https://unpkg.com'],
+      scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
       imgSrc: ["'self'", 'data:'],
@@ -105,6 +105,20 @@ const pageFiles = [
   '/timetable.html', '/events.html', '/announcements.html', '/profile.html', '/settings.html',
 ];
 
+function sendFrontendFile(file) {
+  return (_req, res, next) => {
+    res.sendFile(path.join(projectRoot, file), (error) => error && next(error));
+  };
+}
+
+// Expose only browser assets. Backend modules share the project root but are never static files.
+app.get('/css/style.css', sendFrontendFile('style.css'));
+app.get('/style.css', sendFrontendFile('style.css'));
+app.get('/js/app.js', sendFrontendFile('js/app.js'));
+app.get('/js/config.js', sendFrontendFile('js/config.js'));
+app.get('/frontend.js', sendFrontendFile('js/app.js'));
+app.get('/assets/images/campus-login.svg', sendFrontendFile('campus-login.svg'));
+
 // Admin HTML is protected on the server; hiding its navigation link alone would not secure it.
 app.get('/admin.html', requireAuth, requireRole('admin'), (req, res, next) => {
   res.sendFile(path.join(projectRoot, 'admin.html'), (error) => error && next(error));
@@ -114,12 +128,6 @@ app.get(['/', ...pageFiles], (req, res, next) => {
   const file = req.path === '/' ? 'index.html' : req.path.slice(1);
   res.sendFile(path.join(projectRoot, file), (error) => error && next(error));
 });
-
-// Vercel bundles the app at the function root, so serve root-level HTML and static files from __dirname.
-app.use(express.static(projectRoot, { dotfiles: 'deny', maxAge: 0, index: false }));
-app.use('/css', express.static(projectRoot, { dotfiles: 'deny', maxAge: 0, index: false }));
-app.use('/js', express.static(projectRoot, { dotfiles: 'deny', maxAge: 0, index: false }));
-app.use('/assets', express.static(projectRoot, { dotfiles: 'deny', maxAge: 0, index: false }));
 
 app.use('/api', notFound);
 app.use((req, res) => {
