@@ -1,8 +1,8 @@
 const express = require('express');
 const { z } = require('zod');
-const pool = require('../db');
-const { requireAuth, requireRole, requireStudent } = require('../auth');
-const { HttpError, validate } = require('../errors');
+const pool = require('./db');
+const { requireAuth, requireRole, requireStudent } = require('./auth');
+const { HttpError, validate } = require('./errors');
 
 const router = express.Router();
 const announcementSchema = z.object({

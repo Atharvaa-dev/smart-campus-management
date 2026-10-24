@@ -1,8 +1,8 @@
 const express = require('express');
 const { z } = require('zod');
-const pool = require('../db');
-const { requireAuth, requireRole } = require('../auth');
-const { validate } = require('../errors');
+const pool = require('./db');
+const { requireAuth, requireRole } = require('./auth');
+const { validate } = require('./errors');
 
 const router = express.Router();
 const searchSchema = z.object({ search: z.string().trim().max(100).default('') });

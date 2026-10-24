@@ -4,8 +4,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
 
-const frontendSource = fs.readFileSync(path.resolve(__dirname, '../../js/app.js'), 'utf8');
-const frontendConfigSource = fs.readFileSync(path.resolve(__dirname, '../../js/config.js'), 'utf8');
+const frontendSource = fs.readFileSync(path.resolve(__dirname, 'js/app.js'), 'utf8');
+const frontendConfigSource = fs.readFileSync(path.resolve(__dirname, 'js/config.js'), 'utf8');
 
 function createElement() {
   const classes = new Set();
@@ -280,9 +280,9 @@ test('keeps assignment details visible without submission controls and preserves
     calls.push({ url, options });
     if (url === '/api/auth/me') return response({ role: 'student', email: 'aarav@example.test', student: { name: 'Aarav Sharma' } });
     if (url === '/api/announcements') return response([]);
-    if (url === '/api/assignments') return response([{ id: 1, title: 'Tree assignment', description: 'Implement tree traversals.', subject: 'Data Structures', dueAt: '2026-10-24T23:59:00', status: 'pending' }]);
+    if (url === '/api/assignments') return response([{ id: 1, title: 'Tree assignment', description: 'Implement tree traversals.', subject: 'Data Structures', dueAt: '2026-10-24T23:59:00', status: 'Pending' }]);
     if (url.startsWith('/api/events/') && options.method === 'POST') { isRegistered = true; return response({ registered: true }); }
-    if (url === '/api/events') return response([{ id: 1, title: 'TechNova', description: 'Campus demos', eventType: 'Technology', startsAt: '2026-10-29T10:00:00', location: 'Auditorium', registered: isRegistered }]);
+    if (url === '/api/events') return response([{ id: 1, title: 'TechNova', description: 'Campus demos', eventType: 'Technology', startsAt: '2026-10-29T10:00:00', location: 'Auditorium', registered: false }]);
     if (url === '/api/timetable') return response([]);
     throw new Error(`Unexpected test fetch: ${url}`);
   };
