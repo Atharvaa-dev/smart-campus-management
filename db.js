@@ -2,6 +2,8 @@
 const mysql = require('mysql2/promise');
 const config = require('./config');
 
+const ca = process.env.MYSQL_SSL_CA;
+
 const pool = mysql.createPool({
   host: config.MYSQL_HOST,
   port: config.MYSQL_PORT,
@@ -9,10 +11,10 @@ const pool = mysql.createPool({
   user: config.MYSQL_USER,
   password: config.MYSQL_PASSWORD,
 
-  // Aiven requires encrypted MySQL connections.
   ssl: {
     minVersion: 'TLSv1.2',
     rejectUnauthorized: true,
+    ...(ca ? { ca } : {}),
   },
 
   waitForConnections: true,
