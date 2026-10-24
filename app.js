@@ -6,8 +6,7 @@ const { rateLimit } = require('express-rate-limit');
 const pool = require('./db');
 const config = require('./config');
 const { notFound, errorHandler, HttpError } = require('./errors');
-const auth = require('./auth');
-const { requireAuth, requireRole } = auth;
+const { requireAuth, requireRole } = require('./auth');
 
 const app = express();
 const projectRoot = __dirname;
@@ -73,9 +72,13 @@ app.use('/api', (req, res, next) => {
   return next();
 });
 
-app.get('/api/health', async (_req, res) => {
-  await pool.query('SELECT 1');
-  res.json({ data: { status: 'ok' } });
+app.get('/api/health', async (_req, res, next) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ data: { status: 'ok' } });
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.use('/api/auth', rateLimit({
@@ -85,33 +88,37 @@ app.use('/api/auth', rateLimit({
   legacyHeaders: false,
   message: { error: 'Too many sign-in attempts. Try again in a few minutes.' },
   skipSuccessfulRequests: true,
-}), auth.router || auth);
+}), require('./routes/auth'));
 
 // Each router owns a feature area; the router applies its own authentication and role rules.
-app.use('/api/profile', require('./profile'));
-app.use('/api/attendance', require('./attendance'));
-app.use('/api/assignments', require('./assignments'));
-app.use('/api/timetable', require('./timetable'));
-app.use('/api/events', require('./events'));
-app.use('/api/announcements', require('./announcements'));
-app.use('/api/admin', require('./admin'));
+app.use('/api/profile', require('./routes/profile'));
+app.use('/api/attendance', require('./routes/attendance'));
+app.use('/api/assignments', require('./routes/assignments'));
+app.use('/api/timetable', require('./routes/timetable'));
+app.use('/api/events', require('./routes/events'));
+app.use('/api/announcements', require('./routes/announcements'));
+app.use('/api/admin', require('./routes/admin'));
 
 const pageFiles = [
   '/index.html', '/login.html', '/attendance.html', '/assignments.html',
   '/timetable.html', '/events.html', '/announcements.html', '/profile.html', '/settings.html',
 ];
+
 // Admin HTML is protected on the server; hiding its navigation link alone would not secure it.
 app.get('/admin.html', requireAuth, requireRole('admin'), (req, res, next) => {
   res.sendFile(path.join(projectRoot, 'admin.html'), (error) => error && next(error));
 });
+
 app.get(['/', ...pageFiles], (req, res, next) => {
   const file = req.path === '/' ? 'index.html' : req.path.slice(1);
   res.sendFile(path.join(projectRoot, file), (error) => error && next(error));
 });
-app.use('/css', express.static(path.join(projectRoot, 'css'), { dotfiles: 'deny', maxAge: 0 }));
-app.use('/js', express.static(path.join(projectRoot, 'js'), { dotfiles: 'deny', maxAge: 0 }));
-// Serve local decorative assets from the same origin so the login art also works offline.
-app.use('/assets', express.static(path.join(projectRoot, 'assets'), { dotfiles: 'deny', maxAge: 0 }));
+
+// Vercel bundles the app at the function root, so serve root-level HTML and static files from __dirname.
+app.use(express.static(projectRoot, { dotfiles: 'deny', maxAge: 0, index: false }));
+app.use('/css', express.static(projectRoot, { dotfiles: 'deny', maxAge: 0, index: false }));
+app.use('/js', express.static(projectRoot, { dotfiles: 'deny', maxAge: 0, index: false }));
+app.use('/assets', express.static(projectRoot, { dotfiles: 'deny', maxAge: 0, index: false }));
 
 app.use('/api', notFound);
 app.use((req, res) => {
