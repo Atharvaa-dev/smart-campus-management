@@ -109,11 +109,11 @@ const fakePool = {
     }
 
     if (sql.includes('INSERT INTO user_sessions')) {
-      sessions.set(params[0], params[1]);
+      sessions.set(params[1], params[0]);
       return [{ affectedRows: 1 }];
     }
 
-    if (sql.includes('FROM user_sessions session')) {
+    if (sql.includes('FROM user_sessions us')) {
       const userId = sessions.get(params[0]);
       if (userId === studentUser.id) return [[studentUser]];
       if (userId === secondStudentUser.id) return [[secondStudentUser]];
@@ -308,8 +308,10 @@ test('serves existing frontend pages but does not expose server source', async (
   assert.equal(loginIllustration.status, 200);
   assert.match(await loginIllustration.text(), /<svg[\s>]/);
 
-  const privateSource = await request('/server/src/config.js');
-  assert.equal(privateSource.status, 404);
+  for (const sourcePath of ['/app.js', '/config.js', '/db.js', '/auth.js', '/server.js', '/server/src/config.js']) {
+    const privateSource = await request(sourcePath);
+    assert.equal(privateSource.status, 404, `${sourcePath} must not be served as a static asset`);
+  }
 
   const protectedAdminPage = await request('/admin.html');
   assert.equal(protectedAdminPage.status, 401);

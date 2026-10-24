@@ -226,6 +226,30 @@ test('renders the redesigned login page with the existing accessible sign-in fie
   assert.match(login, /SMART CAMPUS PORTAL/);
 });
 
+test('renders the admin dashboard from role-protected API data', async () => {
+  const calls = [];
+  const fetchMock = async (url) => {
+    calls.push(url);
+    const responses = {
+      '/api/auth/me': { role: 'admin', email: 'admin@example.test', student: null },
+      '/api/admin/overview': { studentCount: 4, subjectCount: 7, upcomingEvents: [] },
+      '/api/admin/students': [{ studentNumber: 'STU-1', name: 'Directory Student', course: 'Computer Science', semester: 'Semester 1', email: 'student@example.test', attendancePercent: 80 }],
+      '/api/admin/subjects': [{ code: 'CS101', name: 'Foundations', course: 'Computer Science', semester: 'Semester 1' }],
+    };
+    return response(responses[url]);
+  };
+
+  const frontend = createFrontend('admin', fetchMock);
+  await flush();
+  const dashboard = frontend.select('#page-content').innerHTML;
+  assert(calls.includes('/api/admin/overview'));
+  assert(calls.includes('/api/admin/students'));
+  assert(calls.includes('/api/admin/subjects'));
+  assert.match(dashboard, /Directory Student/);
+  assert.match(dashboard, /Create campus event/);
+  assert.match(dashboard, /Record attendance/);
+});
+
 test('shows a loading state while the login request is pending', async () => {
   let resolveRequest;
   const frontend = createFrontend('login', () => new Promise((resolve) => { resolveRequest = resolve; }));

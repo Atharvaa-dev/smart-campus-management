@@ -1,9 +1,9 @@
 const assert = require('node:assert/strict');
 const bcrypt = require('bcryptjs');
 const { test } = require('node:test');
-const { accountSchemaFor, safeErrorMessage } = require('../src/cli/create-account');
-const { validate } = require('../src/errors');
-const { persistAccount } = require('../src/cli/account-persistence');
+const { accountSchemaFor, safeErrorMessage } = require('./create-account');
+const { validate } = require('./errors');
+const { persistAccount } = require('./account-persistence');
 
 const studentAccount = {
   email: 'new.student@example.test',

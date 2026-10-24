@@ -78,7 +78,7 @@ npm run student:create -- --email student@campus.edu --name "Student Name" --stu
 
 ## 5. Run the application
 
-Run the Express server from the project root. Express serves the frontend and API on the same origin by default, and `js/config.js` keeps the API base URL empty so browser requests stay on that origin.
+Run the Express server from the project root. Express serves the frontend and API on the same origin by default. The HTML pages load `/css/style.css`, `/js/config.js`, and `/js/app.js`; the server allowlists these browser assets and never serves backend Node.js modules as static files.
 
 ```powershell
 npm run dev
@@ -88,7 +88,7 @@ Open [http://localhost:3000](http://localhost:3000). Use the account created by 
 
 ### Optional: run the frontend on a separate port
 
-For VS Code Live Server, `js/config.js` is configured to use `http://localhost:3000/api`. Add the exact frontend origin to the root `.env` `CORS_ORIGINS` value (the sample uses `http://localhost:5500`) and restart Express after changing `.env`. Open the frontend with the same hostname, such as `http://localhost:5500`, so the browser can send the HTTP-only session cookie to `localhost:3000`. Multiple frontend origins can be comma-separated. The backend permits credentialed CORS only for those configured origins.
+For VS Code Live Server, `js/config.js` uses `http://localhost:3000/api` when the frontend is served from `http://localhost:5500`; deployed and same-origin requests use `/api`. Add the exact frontend origin to the root `.env` `CORS_ORIGINS` value (the sample uses `http://localhost:5500`) and restart Express after changing `.env`. Open the frontend with the same hostname, such as `http://localhost:5500`, so the browser can send the HTTP-only session cookie to `localhost:3000`. Multiple frontend origins can be comma-separated. The backend permits credentialed CORS only for those configured origins.
 
 The normal setup requires just one terminal: `npm run dev`, then open `http://localhost:3000`. For the separate-port setup, start Express in one terminal and Live Server from VS Code on the project root in another; use the Live Server URL shown by VS Code. Do not open the HTML as a `file://` URL.
 
