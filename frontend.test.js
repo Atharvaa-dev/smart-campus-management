@@ -235,6 +235,7 @@ test('renders the admin dashboard from role-protected API data', async () => {
       '/api/admin/overview': { studentCount: 4, subjectCount: 7, upcomingEvents: [] },
       '/api/admin/students': [{ studentNumber: 'STU-1', name: 'Directory Student', course: 'Computer Science', semester: 'Semester 1', email: 'student@example.test', attendancePercent: 80 }],
       '/api/admin/subjects': [{ code: 'CS101', name: 'Foundations', course: 'Computer Science', semester: 'Semester 1' }],
+      '/api/admin/assignment-submissions': [{ assignmentId: 2, assignmentTitle: 'Midterm <project>', subjectCode: 'CS101', subjectName: 'Foundations', studentNumber: 'STU-1', studentName: 'Directory Student', dueAt: '2026-11-01T12:00:00', status: 'pending' }],
     };
     return response(responses[url]);
   };
@@ -245,9 +246,52 @@ test('renders the admin dashboard from role-protected API data', async () => {
   assert(calls.includes('/api/admin/overview'));
   assert(calls.includes('/api/admin/students'));
   assert(calls.includes('/api/admin/subjects'));
+  assert(calls.includes('/api/admin/assignment-submissions'));
   assert.match(dashboard, /Directory Student/);
+  assert.match(dashboard, /Assignment submissions/);
+  assert.match(dashboard, /Midterm &lt;project&gt;/);
+  assert.doesNotMatch(dashboard, /Midterm <project>/);
+  assert.match(dashboard, /value="in_progress">In progress/);
+  assert.match(dashboard, /Save status/);
   assert.match(dashboard, /Create campus event/);
   assert.match(dashboard, /Record attendance/);
+});
+
+test('saves an admin assignment status and refreshes the dashboard with a success message', async () => {
+  const calls = [];
+  let status = 'pending';
+  const fetchMock = async (url, options = {}) => {
+    calls.push({ url, options });
+    if (url === '/api/auth/me') return response({ role: 'admin', email: 'admin@example.test', student: null });
+    if (url === '/api/admin/overview') return response({ studentCount: 1, subjectCount: 1, upcomingEvents: [] });
+    if (url === '/api/admin/students') return response([]);
+    if (url === '/api/admin/subjects') return response([]);
+    if (url === '/api/admin/assignment-submissions') {
+      return response([{ assignmentId: 12, assignmentTitle: 'Project', subjectCode: 'CS101', subjectName: 'Foundations', studentNumber: 'STU-1', studentName: 'Student One', dueAt: '2026-11-01T12:00:00', status }]);
+    }
+    if (url === '/api/assignments/12/status') {
+      status = JSON.parse(options.body).status;
+      return response({ id: 12, studentNumber: 'STU-1', status });
+    }
+    throw new Error(`Unexpected test fetch: ${url}`);
+  };
+
+  const frontend = createFrontend('admin', fetchMock);
+  await flush();
+  const row = { querySelector: () => ({ value: 'submitted' }) };
+  const button = {
+    dataset: { action: 'assignment-status-save', assignmentId: '12', studentNumber: 'STU-1' },
+    disabled: false,
+    closest: (selector) => selector === '[data-submission-row]' ? row : null,
+  };
+  await frontend.listeners.get('click')({ target: { closest: () => button } });
+
+  const update = calls.find((call) => call.url === '/api/assignments/12/status');
+  assert.equal(update.options.method, 'PUT');
+  assert.deepEqual(JSON.parse(update.options.body), { studentNumber: 'STU-1', status: 'submitted' });
+  assert.equal(calls.filter((call) => call.url === '/api/admin/assignment-submissions').length, 2);
+  assert.match(frontend.select('#page-content').innerHTML, /value="submitted" selected/);
+  assert.equal(frontend.select('#app-message').textContent, 'Assignment status saved successfully.');
 });
 
 test('shows a loading state while the login request is pending', async () => {
