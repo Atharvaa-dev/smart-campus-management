@@ -27,11 +27,13 @@ router.get('/overview', async (_req, res) => {
     ),
   ]);
 
-  res.json({ data: {
-    studentCount: Number(studentRows[0][0].count),
-    subjectCount: Number(subjectRows[0][0].count),
-    upcomingEvents: eventRows[0],
-  } });
+  res.json({
+    data: {
+      studentCount: Number(studentRows[0][0].count),
+      subjectCount: Number(subjectRows[0][0].count),
+      upcomingEvents: eventRows[0],
+    }
+  });
 });
 
 router.get('/students', async (req, res) => {
@@ -51,16 +53,18 @@ router.get('/students', async (req, res) => {
      ORDER BY s.full_name LIMIT 100`,
     [search, pattern, pattern, pattern, pattern, pattern],
   );
-  res.json({ data: rows.map((row) => {
-    const totalClasses = Number(row.totalClasses);
-    const attendedClasses = Number(row.attendedClasses);
-    return {
-      ...row,
-      totalClasses,
-      attendedClasses,
-      attendancePercent: totalClasses ? Math.round(attendedClasses / totalClasses * 100) : 0,
-    };
-  }) });
+  res.json({
+    data: rows.map((row) => {
+      const totalClasses = Number(row.totalClasses);
+      const attendedClasses = Number(row.attendedClasses);
+      return {
+        ...row,
+        totalClasses,
+        attendedClasses,
+        attendancePercent: totalClasses ? Math.round(attendedClasses / totalClasses * 100) : 0,
+      };
+    })
+  });
 });
 
 router.get('/subjects', async (req, res) => {
@@ -73,6 +77,34 @@ router.get('/subjects', async (req, res) => {
      ORDER BY course, semester, name`,
     [scoped, course || '', semester || ''],
   );
+  res.json({ data: rows });
+});
+
+router.get('/assignment-submissions', async (_req, res) => {
+  const [rows] = await pool.execute(
+    `SELECT
+       a.id AS assignmentId,
+       a.title AS assignmentTitle,
+       sub.code AS subjectCode,
+       sub.name AS subjectName,
+       s.student_number AS studentNumber,
+       s.full_name AS studentName,
+       DATE_FORMAT(a.due_at, '%Y-%m-%dT%H:%i:%s') AS dueAt,
+       COALESCE(submission.status, 'pending') AS status
+     FROM assignments a
+     JOIN subjects sub ON sub.id = a.subject_id
+     JOIN students s
+       ON s.course = sub.course
+       AND s.semester = sub.semester
+     JOIN users u
+       ON u.id = s.user_id
+       AND u.is_active = TRUE
+     LEFT JOIN assignment_submissions submission
+       ON submission.assignment_id = a.id
+       AND submission.student_id = s.id
+     ORDER BY a.due_at ASC, s.full_name ASC`
+  );
+
   res.json({ data: rows });
 });
 

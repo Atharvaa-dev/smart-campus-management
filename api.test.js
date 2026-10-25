@@ -16,6 +16,7 @@ process.env.CORS_ORIGINS = 'http://localhost:5500';
 const testPasswordHash = bcrypt.hashSync('correct-password-123', 10);
 const sessions = new Map();
 const submissionStatuses = new Map();
+let adminSubmissionQuery = '';
 const eventRegistrations = new Set();
 const announcementReads = new Set();
 const attendanceWrites = [];
@@ -154,6 +155,22 @@ const fakePool = {
         || (assignmentId === 2 && studentNumber === secondProfile.studentNumber);
       const student = studentNumber === secondProfile.studentNumber ? secondProfile : profile;
       return [allowed ? [{ id: assignmentId, studentId: student.id }] : []];
+    }
+
+    if (sql.includes('FROM assignments a') && sql.includes('JOIN users u') && sql.includes('assignment_submissions submission')) {
+      adminSubmissionQuery = sql;
+      return [[
+        {
+          assignmentId: 1, assignmentTitle: 'Trees', subjectCode: 'CS204', subjectName: 'Data Structures',
+          studentNumber: profile.studentNumber, studentName: profile.name, dueAt: '2026-10-24T23:59:00',
+          status: submissionStatuses.get(`${profile.id}:1`) || 'pending',
+        },
+        {
+          assignmentId: 2, assignmentTitle: 'Linear Algebra', subjectCode: 'MA202', subjectName: 'Linear Algebra',
+          studentNumber: secondProfile.studentNumber, studentName: secondProfile.name, dueAt: '2026-10-25T23:59:00',
+          status: submissionStatuses.get(`${secondProfile.id}:2`) || 'pending',
+        },
+      ]];
     }
 
     if (sql.includes('FROM assignments a')) {
@@ -541,7 +558,17 @@ test('updates profiles and allows admin resource creation', async () => {
     body: JSON.stringify({ studentNumber: profile.studentNumber, status: 'submitted' }),
   }, adminCookie);
   assert.equal(updateSubmission.status, 200);
-  assert.equal((await updateSubmission.json()).data.studentNumber, profile.studentNumber);
+  assert.deepEqual((await updateSubmission.json()).data, {
+    id: 1,
+    studentNumber: profile.studentNumber,
+    status: 'submitted',
+  });
+  const updateSubmissionStatus = await request('/api/assignments/1/status', {
+    method: 'PUT',
+    body: JSON.stringify({ studentNumber: profile.studentNumber, status: 'in_progress' }),
+  }, adminCookie);
+  assert.equal(updateSubmissionStatus.status, 200);
+  assert.equal((await updateSubmissionStatus.json()).data.status, 'in_progress');
 
   const createTimetableEntry = await request('/api/timetable', {
     method: 'POST',
@@ -586,6 +613,26 @@ test('updates profiles and allows admin resource creation', async () => {
   const otherSemester = await request('/api/admin/subjects?course=B.Sc%20IT&semester=Semester%203', {}, adminCookie);
   assert.deepEqual((await otherSemester.json()).data, []);
 
+  const anonymousSubmissions = await request('/api/admin/assignment-submissions');
+  assert.equal(anonymousSubmissions.status, 401);
+  const submissionsResponse = await request('/api/admin/assignment-submissions', {}, adminCookie);
+  assert.equal(submissionsResponse.status, 200);
+  const submissions = (await submissionsResponse.json()).data;
+  assert.equal(submissions.length, 2);
+  assert.deepEqual(submissions[0], {
+    assignmentId: 1,
+    assignmentTitle: 'Trees',
+    subjectCode: 'CS204',
+    subjectName: 'Data Structures',
+    studentNumber: profile.studentNumber,
+    studentName: profile.name,
+    dueAt: '2026-10-24T23:59:00',
+    status: 'in_progress',
+  });
+  assert.match(adminSubmissionQuery, /s\.course = sub\.course/);
+  assert.match(adminSubmissionQuery, /s\.semester = sub\.semester/);
+  assert.match(adminSubmissionQuery, /u\.is_active = TRUE/);
+
   const attendanceAccess = await request('/api/attendance', {}, adminCookie);
   assert.equal(attendanceAccess.status, 403);
 });
@@ -594,7 +641,7 @@ test('rejects student access to admin pages, admin data, and attendance writes',
   const page = await request('/admin.html', {}, studentCookie);
   assert.equal(page.status, 403);
 
-  for (const route of ['/api/admin/overview', '/api/admin/students', '/api/admin/subjects']) {
+  for (const route of ['/api/admin/overview', '/api/admin/students', '/api/admin/subjects', '/api/admin/assignment-submissions']) {
     const response = await request(route, {}, studentCookie);
     assert.equal(response.status, 403, `${route} must reject students`);
   }

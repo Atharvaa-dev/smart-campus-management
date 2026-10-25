@@ -371,15 +371,16 @@
   }
 
   async function loadAdminDashboard() {
-    const [overview, students, subjects] = await Promise.all([
+    const [overview, students, subjects, submissions] = await Promise.all([
       request('/admin/overview'),
       request('/admin/students'),
       request('/admin/subjects'),
+      request('/admin/assignment-submissions'),
     ]);
-    renderAdmin(overview, students, subjects);
+    renderAdmin(overview, students, subjects, submissions);
   }
 
-  function renderAdmin(overview, students, subjects) {
+  function renderAdmin(overview, students, subjects, submissions) {
     const subjectOptions = subjects.map((subject) => `<option value="${escapeHtml(subject.code)}">${escapeHtml(subject.code)} · ${escapeHtml(subject.name)} (${escapeHtml(subject.course)} / ${escapeHtml(subject.semester)})</option>`).join('');
     const studentOptions = students.map((student) => `<option value="${escapeHtml(student.studentNumber)}">${escapeHtml(student.studentNumber)} · ${escapeHtml(student.name)}</option>`).join('');
     content().innerHTML = `
@@ -389,6 +390,7 @@
         <section class="card form-card"><div class="card-head"><div><h2>Student directory</h2><p>Search active student profiles.</p></div></div><label for="admin-student-search">Search students</label><input class="input" id="admin-student-search" type="search" placeholder="Name, ID, course, or email"><div class="table-wrap"><table class="data-table"><thead><tr><th>Student</th><th>Course</th><th>Attendance</th></tr></thead><tbody id="admin-students">${studentRows(students)}</tbody></table></div></section>
         <section class="card form-card"><div class="card-head"><div><h2>Upcoming events</h2><p>Next published campus events.</p></div></div><div class="compact-list">${overview.upcomingEvents.length ? overview.upcomingEvents.map((event) => `<div class="list-row"><div class="list-copy"><b>${escapeHtml(event.title)}</b><small>${formatDate(event.startsAt)} · ${escapeHtml(event.location)}</small></div><span class="badge blue">${escapeHtml(event.eventType)}</span></div>`).join('') : emptyState('No upcoming events.')}</div></section>
       </div>
+      <section class="card form-card"><div class="card-head"><div><h2>Assignment submissions</h2><p>Review and update submission status for each student.</p></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Assignment</th><th>Student</th><th>Due date</th><th>Status</th><th>Action</th></tr></thead><tbody>${submissionRows(submissions)}</tbody></table></div></section>
       <div class="admin-columns">
         <form class="card form-card" data-form="announcement"><div class="card-head"><div><h2>Publish announcement</h2><p>Share an update with students.</p></div></div><div class="field"><label for="notice-title">Title</label><input class="input" id="notice-title" name="title" required minlength="3"></div><div class="field"><label for="notice-category">Category</label><input class="input" id="notice-category" name="category" required value="Academic"></div><div class="field"><label for="notice-body">Message</label><textarea class="input" id="notice-body" name="body" rows="3" required></textarea></div><button class="btn btn-primary" type="submit">Publish announcement</button></form>
         <form class="card form-card" data-form="event"><div class="card-head"><div><h2>Create campus event</h2><p>Publish an upcoming activity.</p></div></div><div class="field"><label>Title</label><input class="input" name="title" required minlength="3"></div><div class="field"><label>Event type</label><input class="input" name="eventType" required value="Campus"></div><div class="field"><label>Description</label><textarea class="input" name="description" rows="2" required></textarea></div><div class="field"><label>Starts at</label><input class="input" name="startsAt" type="datetime-local" required></div><div class="field"><label>Location</label><input class="input" name="location" required></div><button class="btn btn-primary" type="submit">Create event</button></form>
@@ -396,6 +398,22 @@
         <form class="card form-card" data-form="timetable"><div class="card-head"><div><h2>Add timetable entry</h2><p>Schedule a class for a course.</p></div></div><div class="field"><label>Subject</label><select name="subjectCode" required>${subjectOptions}</select></div><div class="field"><label>Weekday</label><select name="dayOfWeek" required><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option></select></div><div class="field"><label>Start time</label><input class="input" name="startTime" type="time" required></div><div class="field"><label>End time</label><input class="input" name="endTime" type="time" required></div><div class="field"><label>Room</label><input class="input" name="room" required></div><div class="field"><label>Class type</label><input class="input" name="classType" value="Lecture" required></div><button class="btn btn-primary" type="submit">Add class</button></form>
         <form class="card form-card" data-form="attendance"><div class="card-head"><div><h2>Record attendance</h2><p>Update a student's class record.</p></div></div><div class="field"><label>Student</label><select name="studentNumber" required>${studentOptions}</select></div><div class="field"><label>Subject</label><select name="subjectCode" required>${subjectOptions}</select></div><div class="field"><label>Class date</label><input class="input" name="classDate" type="date" required></div><label class="setting-row"><span><b>Present</b></span><input name="attended" type="checkbox" checked></label><button class="btn btn-primary" type="submit">Save attendance</button></form>
       </div>`;
+  }
+
+  function submissionRows(submissions) {
+    if (!submissions.length) return '<tr><td colspan="5">No assignment submissions to review.</td></tr>';
+    return submissions.map((submission) => `
+      <tr data-submission-row>
+        <td><b>${escapeHtml(submission.assignmentTitle)}</b><br><span class="muted">${escapeHtml(submission.subjectCode)} · ${escapeHtml(submission.subjectName)}</span></td>
+        <td><b>${escapeHtml(submission.studentName)}</b><br><span class="muted">${escapeHtml(submission.studentNumber)}</span></td>
+        <td>${formatDate(submission.dueAt)}</td>
+        <td><select aria-label="Status for ${escapeHtml(submission.assignmentTitle)} - ${escapeHtml(submission.studentName)}">
+          <option value="pending"${submission.status === 'pending' ? ' selected' : ''}>Pending</option>
+          <option value="in_progress"${submission.status === 'in_progress' ? ' selected' : ''}>In progress</option>
+          <option value="submitted"${submission.status === 'submitted' ? ' selected' : ''}>Submitted</option>
+        </select></td>
+        <td><button class="btn btn-secondary" type="button" data-action="assignment-status-save" data-assignment-id="${escapeHtml(submission.assignmentId)}" data-student-number="${escapeHtml(submission.studentNumber)}">Save status</button></td>
+      </tr>`).join('');
   }
 
   function studentRows(students) {
@@ -503,7 +521,26 @@
     const button = event.target.closest('[data-action]');
     if (!button) return;
     const action = button.dataset.action;
-    if (action === 'dashboard-refresh') {
+    if (action === 'assignment-status-save') {
+      const row = button.closest('[data-submission-row]');
+      const status = row?.querySelector('select')?.value;
+      if (!row || !['pending', 'in_progress', 'submitted'].includes(status)) {
+        showMessage('Choose a valid assignment status before saving.');
+        return;
+      }
+      button.disabled = true;
+      try {
+        await request(`/assignments/${encodeURIComponent(button.dataset.assignmentId)}/status`, {
+          method: 'PUT',
+          body: JSON.stringify({ studentNumber: button.dataset.studentNumber, status }),
+        });
+        await loadAdminDashboard();
+        showMessage('Assignment status saved successfully.', 'success');
+      } catch (failure) {
+        button.disabled = false;
+        showMessage(failure.message);
+      }
+    } else if (action === 'dashboard-refresh') {
       button.disabled = true;
       button.textContent = 'Refreshing…';
       try {
