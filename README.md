@@ -2,6 +2,62 @@
 
 Smart Campus is a full-stack campus portal. It keeps the existing HTML, CSS, and vanilla JavaScript pages and serves them from an Express API backed by MySQL.
 
+## Demo login accounts
+
+Use these credentials to quickly verify that the website is working locally after setup.
+
+### Admin account
+
+- Email: halamatharva4@gmail.com
+- Full name: Atharva Halam
+- Password: Admin@202666
+- Role: Admin
+
+### Student account
+
+- Email: aarav.sharma@example.com
+- Full name: Aarav Sharma
+- Student number: STU-2026-0101
+- Course: B.Tech Computer Science
+- Semester: Semester 4
+- Phone number: 9000000101
+- Password: CampusTest@2027
+- Role: Student
+
+## Quick check to confirm the website works
+
+1. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+2. Set up the MySQL database and environment variables as described below in this README.
+
+3. Start the application:
+
+   ```bash
+   npm run dev
+   ```
+
+4. Open the app in your browser:
+
+   ```text
+   http://localhost:3000
+   ```
+
+5. Log in using one of the demo accounts above.
+
+6. Verify that the app loads correctly:
+   - Admin login opens the admin dashboard.
+   - Student login opens the student dashboard.
+   - Pages load without errors.
+   - You can navigate between dashboard sections such as attendance, timetable, assignments, announcements, and events.
+
+7. For a quick check, sign in with the admin account first to confirm the admin area works, then sign out and log in with the student account to confirm the student view works.
+
+Smart Campus is a full-stack campus portal. It keeps the existing HTML, CSS, and vanilla JavaScript pages and serves them from an Express API backed by MySQL.
+
 ## Requirements
 
 - Node.js 20 or newer and npm
@@ -10,7 +66,7 @@ Smart Campus is a full-stack campus portal. It keeps the existing HTML, CSS, and
 
 ## 1. Create the database
 
-The schema defaults to the database name `smart_campus`, which matches `.env.example`. If you choose a different database name, update the `CREATE DATABASE` and `USE` statements in both SQL files to match `MYSQL_DATABASE`. Create the schema with a MySQL account that can create databases and tables:
+The schema defaults to the database name `smart_campus`, which matches `.env.example`. If you choose a different database name, update the `CREATE DATABASE` and `USE` statements in both SQL files [...]
 
 ```powershell
 Get-Content -Raw server/database/schema.sql | mysql -u root -p
@@ -28,7 +84,7 @@ Run these statements using your MySQL administrator account. The application doe
 
 ## 2. Configure environment variables
 
-Copy `.env.example` to `.env` in the project root (PowerShell: `Copy-Item .env.example .env`). Fill in `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, and `MYSQL_PASSWORD` for your MySQL instance. Keep `.env` private; it is excluded by `.gitignore` and is never served as a static file.
+Copy `.env.example` to `.env` in the project root (PowerShell: `Copy-Item .env.example .env`). Fill in `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, and `MYSQL_PASSWORD` for your MyS[...]
 
 Generate a session secret locally and put its output in `.env`:
 
@@ -36,7 +92,7 @@ Generate a session secret locally and put its output in `.env`:
 node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
 ```
 
-`BCRYPT_ROUNDS` defaults to 12. Set `NODE_ENV=production` only behind HTTPS; production mode enables the `Secure` cookie flag. If HTTPS terminates at a reverse proxy, set `TRUST_PROXY_HOPS=1` for one trusted proxy hop (adjust to your deployment) so origin checks and secure cookies see the external HTTPS request correctly.
+`BCRYPT_ROUNDS` defaults to 12. Set `NODE_ENV=production` only behind HTTPS; production mode enables the `Secure` cookie flag. If HTTPS terminates at a reverse proxy, set `TRUST_PROXY_HOPS=1` for [...]
 
 ## 3. Install dependencies and initialize example data
 
@@ -46,7 +102,7 @@ From the project root:
 npm install
 ```
 
-Create a student for the optional attendance seed. The command prompts for a password without echoing it; use at least 12 characters. Keep the sample student number if you want the seed's sample attendance records:
+Create a student for the optional attendance seed. The command prompts for a password without echoing it; use at least 12 characters. Keep the sample student number if you want the seed's sample a[...]
 
 ```powershell
 npm run student:create -- --email aarav.sharma@campus.edu --name "Aarav Sharma" --student-number STU-2024-0187 --course "B.Tech Computer Science" --semester "Semester 4" --phone "+91 98765 43210"
@@ -68,7 +124,7 @@ Create the administrator from an interactive terminal so the password is entered
 npm run admin:create -- --email admin@campus.edu --name "Campus Admin"
 ```
 
-The admin command never creates a default account and never accepts a password in command-line arguments. Admin accounts can open the role-protected `admin.html` dashboard to review campus counts and upcoming events, search the student directory, mark attendance, create assignments, and publish announcements.
+The admin command never creates a default account and never accepts a password in command-line arguments. Admin accounts can open the role-protected `admin.html` dashboard to review campus counts [...]
 
 Create further student accounts through the same CLI pattern:
 
@@ -78,7 +134,7 @@ npm run student:create -- --email student@campus.edu --name "Student Name" --stu
 
 ## 5. Run the application
 
-Run the Express server from the project root. Express serves the frontend and API on the same origin by default. The HTML pages load `/css/style.css`, `/js/config.js`, and `/js/app.js`; the server allowlists these browser assets and never serves backend Node.js modules as static files.
+Run the Express server from the project root. Express serves the frontend and API on the same origin by default. The HTML pages load `/css/style.css`, `/js/config.js`, and `/js/app.js`; the server[...]
 
 ```powershell
 npm run dev
@@ -88,9 +144,9 @@ Open [http://localhost:3000](http://localhost:3000). Use the account created by 
 
 ### Optional: run the frontend on a separate port
 
-For VS Code Live Server, `js/config.js` uses `http://localhost:3000/api` when the frontend is served from `http://localhost:5500`; deployed and same-origin requests use `/api`. Add the exact frontend origin to the root `.env` `CORS_ORIGINS` value (the sample uses `http://localhost:5500`) and restart Express after changing `.env`. Open the frontend with the same hostname, such as `http://localhost:5500`, so the browser can send the HTTP-only session cookie to `localhost:3000`. Multiple frontend origins can be comma-separated. The backend permits credentialed CORS only for those configured origins.
+For VS Code Live Server, `js/config.js` uses `http://localhost:3000/api` when the frontend is served from `http://localhost:5500`; deployed and same-origin requests use `/api`. Add the exact front[...]
 
-The normal setup requires just one terminal: `npm run dev`, then open `http://localhost:3000`. For the separate-port setup, start Express in one terminal and Live Server from VS Code on the project root in another; use the Live Server URL shown by VS Code. Do not open the HTML as a `file://` URL.
+The normal setup requires just one terminal: `npm run dev`, then open `http://localhost:3000`. For the separate-port setup, start Express in one terminal and Live Server from VS Code on the proje[...]
 
 ## API routes
 
@@ -123,7 +179,7 @@ All successful API responses use a `{ "data": ... }` envelope. Validation errors
 | `PUT /api/announcements/:id/read` | Student | Mark a notice read |
 | `DELETE /api/announcements/:id/read` | Student | Mark a notice unread |
 
-Login returns an HTTP-only, same-site session cookie. The database stores only an HMAC hash of each random session token. Passwords are stored as bcrypt hashes. API writes use validated request bodies, parameterized SQL, origin checks, and role middleware. `GET /api/auth/me` returns `401` when the session cookie is missing, invalid, or expired.
+Login returns an HTTP-only, same-site session cookie. The database stores only an HMAC hash of each random session token. Passwords are stored as bcrypt hashes. API writes use validated request b[...]
 
 Admin write payload examples:
 
@@ -189,9 +245,9 @@ Admin write payload examples:
 }
 ```
 
-The account-creation commands and all database-backed routes require the connection values in `.env`. The included `npm test` suite uses a database stub to exercise HTTP behavior; it does not test against a live MySQL instance.
+The account-creation commands and all database-backed routes require the connection values in `.env`. The included `npm test` suite uses a database stub to exercise HTTP behavior; it does not tes[...]
 
-The UI's attendance display threshold and compact view preferences remain browser-local display preferences. Account data, attendance, assignments, timetable, event registration, and announcement read state use the API and MySQL.
+The UI's attendance display threshold and compact view preferences remain browser-local display preferences. Account data, attendance, assignments, timetable, event registration, and announcement[...]
 
 ## Security and deployment notes
 
